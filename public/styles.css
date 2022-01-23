@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+}
+
+.spacer {
+    height: 1600px;
+}
+
+.section {
+    position: relative;
+    background: rgb(69,132,180);
+    /* background: linear-gradient(0deg, var(--bg-gradient-ground) 0%, rgba(30,72,119,1) 100%); */
+}
+
+#c {
+    width: 100%;
+    min-height: 600px;
+    display: block;
+}
