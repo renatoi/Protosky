@@ -4,14 +4,14 @@ import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUt
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { getRandomArbitrary, resizeRendererToDisplaySize } from "./three-utils";
 import { FogGUIHelper } from "./three-gui-helpers";
-import { Light } from "three";
+import { Carousel } from "./carousel";
 
-let shouldGenerate = true;
+let buildClouds = true;
 
 const config = {
-  cameraVelocity: 0.1,
+  cameraVelocity: 0.03,
   cameraTravelDistance: 8000,
-  cameraHeight: 200,
+  cameraHeight: 250,
 
   _cloudCount: 8000,
   get cloudCount() {
@@ -19,7 +19,7 @@ const config = {
   },
   set cloudCount(value) {
     this._cloudCount = value;
-    shouldGenerate = true;
+    buildClouds = true;
   },
 
   _horizontalSpreadFactor: 1000,
@@ -28,7 +28,7 @@ const config = {
   },
   set horizontalSpreadFactor(value) {
     this._horizontalSpreadFactor = value;
-    shouldGenerate = true;
+    buildClouds = true;
   },
 
   _verticalSpreadFactor: 100,
@@ -37,19 +37,23 @@ const config = {
   },
   set verticalSpreadFactor(value) {
     this._verticalSpreadFactor = value;
-    shouldGenerate = true;
+    buildClouds = true;
   },
 
-  _cameraScrollOffset: 80,
+  _cameraScrollOffset: 100,
   get cameraScrollOffset() {
     return this._cameraScrollOffset;
   },
   set cameraScrollOffset(value) {
     this._cameraScrollOffset = value;
-    shouldGenerate = true;
+    buildClouds = true;
   },
 };
 
+// we init carousel with defaults, we fill with info once we have the items loaded
+const carousel = new Carousel();
+
+// gui
 const gui = new GUI();
 gui.close();
 
@@ -57,6 +61,19 @@ gui.add(config, "cameraVelocity");
 gui.add(config, "cameraTravelDistance");
 gui.add(config, "cameraHeight");
 gui.add(config, "cameraScrollOffset");
+
+const carouselFolder = gui.addFolder("Carousel");
+carouselFolder.add(carousel, "animDuration");
+carouselFolder
+  .add(carousel.itemRightPos, "x")
+  .name("Item right position X");
+carouselFolder
+  .add(carousel.itemRightPos, "y")
+  .name("Item right position Y");
+carouselFolder.add(carousel.itemMiddlePos, "x").name("Item middle position X");
+carouselFolder.add(carousel.itemMiddlePos, "y").name("Item middle position Y");
+carouselFolder.add(carousel.itemLeftPos, "x").name("Item left position X");
+carouselFolder.add(carousel.itemLeftPos, "y").name("Item left position Y");
 
 const cloudsFolder = gui.addFolder("Clouds");
 cloudsFolder.add(config, "cloudCount", 1, 8000);
@@ -84,7 +101,6 @@ camera.position.setZ(6000);
 // scenes
 const scene1 = new THREE.Scene();
 scene1.background = new THREE.Color("#4584b4");
-
 const scene2 = new THREE.Scene();
 
 // fog
@@ -121,65 +137,104 @@ const planeHeight = 64;
 const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
 
 // Dino
-let dinoRoot;
-let modelReady = false
-let mixer;
-const animationActions = [];
-let activeAction;
-let lastAction;
+let allModelsLoaded = false;
+const dragons = [
+  {
+    modelPath: "./Dragons/Ysera.glb",
+    root: null,
+    mixer: null,
+    animActions: [],
+    activeAction: [],
+    positioner: null,
+  },
+  {
+    modelPath: "./Dragons/Kalecgos.glb",
+    root: null,
+    mixer: null,
+    animActions: [],
+    activeAction: [],
+    positioner: null,
+  },
+  {
+    modelPath: "./Dragons/Nozdormu.glb",
+    root: null,
+    mixer: null,
+    animActions: [],
+    activeAction: [],
+    positioner: null,
+  },
+];
 
-const gltfLoader = new GLTFLoader();
-gltfLoader.load("./Dinofly/Dinofly.glb", (gltf) => {
-  console.log("animations", gltf.animations); // Array<THREE.AnimationClip>
-  console.log("scene", gltf.scene); // THREE.Group
-  console.log("scenes", gltf.scenes); // Array<THREE.Group>
-  console.log("cameras", gltf.cameras); // Array<THREE.Camera>
-  console.log("asset", gltf.asset); // Object
+function loadModel(path) {
+  return new Promise(function (resolve, reject) {
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(path, resolve, null, reject);
+  });
+}
 
-  dinoRoot = gltf.scene;
-  dinoRoot.rotateY(45);
-  dinoRoot.scale.set(0.5, 0.5, 0.5);
-  dinoRoot.renderOrder = 2;
-  dinoRoot.depthTest = false;
+var loadModelPromises = dragons.map((dino) => loadModel(dino.modelPath));
 
-  mixer = new THREE.AnimationMixer(gltf.scene);
-  const animationAction = mixer.clipAction(gltf.animations[0]);
-  animationActions.push(animationAction);
-  activeAction = animationActions[0];
-  activeAction.play()
+Promise.all(loadModelPromises).then((gltfArray) => {
+  gltfArray.forEach((gltf, i) => {
+    const root = gltf.scene;
+    root.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 45);
+    root.scale.set(0.15, 0.15, 0.15);
+    dragons[i].root = root;
 
-  scene2.add(dinoRoot);
-  modelReady = true;
+    const mixer = new THREE.AnimationMixer(gltf.scene);
+    dragons[i].mixer = mixer;
 
-  console.log('gltf added');
+    const animationAction = mixer.clipAction(gltf.animations[0]);
+    dragons[i].animActions.push(animationAction);
+
+    dragons[i].activeAction = dragons[i].animActions[0];
+    dragons[i].activeAction.play();
+
+    scene2.add(root);
+
+    console.log("gltf added");
+  });
+
+  // fill carousel with data
+  carousel.configure({
+    items: dragons,
+  });
+
+  allModelsLoaded = true;
+
   render();
 });
 
+// load dino models
+dragons.forEach((dino) => loadModel(dino.modelPath));
+
 // directional light
-const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(2, 2, 5);
 scene2.add(directionalLight);
+
+const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight2.position.set(-2, 2, 5);
+scene2.add(directionalLight2);
 
 // render
 let mesh1;
 let mesh2;
 let zPos;
-let startTime = Date.now();
+const clock = new THREE.Clock();
+const startTime = Date.now();
 let cameraOffset = 0;
 
-const clock = new THREE.Clock()
-
 function render(time) {
-  time *= 0.001; // convert time to seconds
-
   if (resizeRendererToDisplaySize(renderer)) {
     const canvas = renderer.domElement;
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
     camera.updateProjectionMatrix();
   }
 
-  if (shouldGenerate) {
-    shouldGenerate = false;
+  // we build clouds only once or when config is changed
+  if (buildClouds) {
+    buildClouds = false;
 
     scene1.remove(mesh1);
     scene1.remove(mesh2);
@@ -208,21 +263,18 @@ function render(time) {
 
     const mergedGeometry = mergeBufferGeometries(geometries);
 
-    // mesh
+    // mesh (we add two so we can walk 2 sets of clouds without interruption when we return to the first one)
     mesh1 = new THREE.Mesh(mergedGeometry, material);
-    mesh1.depthTest = false;
-    mesh1.renderOrder = 0;
     scene1.add(mesh1);
 
     mesh2 = new THREE.Mesh(mergedGeometry, material);
-    mesh1.depthTest = false;
-    mesh1.renderOrder = 1;
     mesh2.position.setZ(-config.cameraTravelDistance);
     scene1.add(mesh2);
   }
 
-  const deltaTime = Date.now() - startTime;
-  zPos = (deltaTime * config.cameraVelocity) % config.cameraTravelDistance;
+  // anim camera
+  const elapsedTime = Date.now() - startTime;
+  zPos = (elapsedTime * config.cameraVelocity) % config.cameraTravelDistance;
   const cameraYOffset = cameraOffset * config.cameraScrollOffset;
   camera.position.set(
     0,
@@ -232,15 +284,36 @@ function render(time) {
 
   renderer.render(scene1, camera);
 
-  if (modelReady) {
-    dinoRoot.position.set(camera.position.x, camera.position.y, camera.position.z - 10);
-    mixer.update(clock.getDelta());
+  // we draw scene2 on top of scene1
+  if (allModelsLoaded) {
+    carousel.init();
+    carousel.update(time, () => {
+      const camPos = camera.position;
+      const deltaSeconds = clock.getDelta();
 
-    renderer.autoClear = false;
-    renderer.clearDepth(); //clears the depth buffer so the objects in scene2 will always be on top
-    renderer.render(scene2, camera);
+      carousel.items.forEach((item, index) => {
+        if (item.positioner) {
+          item.root.position.set(
+            camPos.x + item.positioner.x,
+            camPos.y + item.positioner.y,
+            camPos.z - 10
+          );
+        }
+
+        item.mixer.update(deltaSeconds);
+      });
+    });
   }
 
+  // draw scene2 on top of scene1
+  renderer.autoClear = false;
+
+  // clears the depth buffer so the objects in scene2 will always be on top
+  renderer.clearDepth();
+
+  renderer.render(scene2, camera);
+
+  // scene1 should clear when rendering next time
   renderer.autoClear = true;
 
   requestAnimationFrame(render);
@@ -274,3 +347,14 @@ recalculateRects();
 onScroll();
 
 render();
+
+// Listeners for carousel
+const prevButton = document.querySelector(".carousel-button-prev");
+prevButton.addEventListener("click", () => {
+  carousel.prev();
+});
+
+const nextButton = document.querySelector(".carousel-button-next");
+nextButton.addEventListener("click", () => {
+  carousel.next();
+});
