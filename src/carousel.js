@@ -41,39 +41,49 @@ export class Carousel {
   }
 
   next() {
-    const currPositioner = this.items[this.activeIndex].positioner;
-    new TWEEN.Tween(currPositioner)
+    const currItem = this.items[this.activeIndex];
+    new TWEEN.Tween(currItem.positioner)
       .to(this.itemLeftPos, this.animDuration * 1000)
       .easing(TWEEN.Easing.Quadratic.In)
+      .onComplete(() => {
+        currItem.root.visible = false;
+      })
       .start();
 
     this.activeIndex =
       this.activeIndex + 1 === this.items.length ? 0 : this.activeIndex + 1;
 
     // new one
-    this.items[this.activeIndex].positioner = {
+    const newItem = this.items[this.activeIndex];
+    newItem.positioner = {
       ...this.itemRightPos,
     };
-    new TWEEN.Tween(this.items[this.activeIndex].positioner)
+    newItem.root.visible = true;
+    new TWEEN.Tween(newItem.positioner)
       .to(this.itemMiddlePos, this.animDuration * 1000)
       .easing(TWEEN.Easing.Quadratic.Out)
       .start();
   }
 
   prev() {
-    const currPositioner = this.items[this.activeIndex].positioner;
-    new TWEEN.Tween(currPositioner)
+    const currItem = this.items[this.activeIndex];
+    new TWEEN.Tween(currItem.positioner)
       .to(this.itemRightPos, this.animDuration * 1000)
       .easing(TWEEN.Easing.Quadratic.In)
+      .onComplete(() => {
+        currItem.root.visible = false;
+      })
       .start();
 
     this.activeIndex =
       this.activeIndex === 0 ? this.items.length - 1 : this.activeIndex - 1;
 
     // new one
-    this.items[this.activeIndex].positioner = {
+    const newItem = this.items[this.activeIndex];
+    newItem.positioner = {
       ...this.itemLeftPos,
     };
+    newItem.root.visible = true;
     new TWEEN.Tween(this.items[this.activeIndex].positioner)
       .to(this.itemMiddlePos, this.animDuration * 1000)
       .easing(TWEEN.Easing.Quadratic.Out)

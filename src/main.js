@@ -5,15 +5,28 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { getRandomArbitrary, resizeRendererToDisplaySize } from "./three-utils";
 import { FogGUIHelper } from "./three-gui-helpers";
 import { Carousel } from "./carousel";
+import Stats from "stats.js";
+
+const stats = new Stats();
+stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild( stats.dom );
 
 let buildClouds = true;
 
 const config = {
   cameraVelocity: 0.03,
-  cameraTravelDistance: 8000,
-  cameraHeight: 250,
+  cameraTravelDistance: 1000,
+  cameraHeight: 100,
+  _cameraScrollOffset: 40,
+  get cameraScrollOffset() {
+    return this._cameraScrollOffset;
+  },
+  set cameraScrollOffset(value) {
+    this._cameraScrollOffset = value;
+    buildClouds = true;
+  },
 
-  _cloudCount: 8000,
+  _cloudCount: 200,
   get cloudCount() {
     return this._cloudCount;
   },
@@ -22,7 +35,7 @@ const config = {
     buildClouds = true;
   },
 
-  _horizontalSpreadFactor: 1000,
+  _horizontalSpreadFactor: 400,
   get horizontalSpreadFactor() {
     return this._horizontalSpreadFactor;
   },
@@ -31,21 +44,12 @@ const config = {
     buildClouds = true;
   },
 
-  _verticalSpreadFactor: 100,
+  _verticalSpreadFactor: 15,
   get verticalSpreadFactor() {
     return this._verticalSpreadFactor;
   },
   set verticalSpreadFactor(value) {
     this._verticalSpreadFactor = value;
-    buildClouds = true;
-  },
-
-  _cameraScrollOffset: 100,
-  get cameraScrollOffset() {
-    return this._cameraScrollOffset;
-  },
-  set cameraScrollOffset(value) {
-    this._cameraScrollOffset = value;
     buildClouds = true;
   },
 };
@@ -107,7 +111,7 @@ const scene2 = new THREE.Scene();
 {
   const color = scene1.background;
   const near = 1;
-  const far = 2700;
+  const far = 900;
   scene1.fog = new THREE.Fog(color, near, far);
   const fogFolder = gui.addFolder("Fog");
   const fogGUIHelper = new FogGUIHelper(scene1.fog, scene1.background);
@@ -145,7 +149,7 @@ const dragons = [
     mixer: null,
     animActions: [],
     activeAction: [],
-    positioner: null,
+    positioner: { x: -1000, y: -1000 },
   },
   {
     modelPath: "./Dragons/Kalecgos.glb",
@@ -153,7 +157,7 @@ const dragons = [
     mixer: null,
     animActions: [],
     activeAction: [],
-    positioner: null,
+    positioner: { x: -1000, y: -1000 },
   },
   {
     modelPath: "./Dragons/Nozdormu.glb",
@@ -161,7 +165,7 @@ const dragons = [
     mixer: null,
     animActions: [],
     activeAction: [],
-    positioner: null,
+    positioner: { x: -1000, y: -1000 },
   },
 ];
 
@@ -179,6 +183,7 @@ Promise.all(loadModelPromises).then((gltfArray) => {
     const root = gltf.scene;
     root.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 45);
     root.scale.set(0.15, 0.15, 0.15);
+    root.visible = false;
     dragons[i].root = root;
 
     const mixer = new THREE.AnimationMixer(gltf.scene);
@@ -202,7 +207,7 @@ Promise.all(loadModelPromises).then((gltfArray) => {
 
   allModelsLoaded = true;
 
-  render();
+  animate();
 });
 
 // load dino models
@@ -225,7 +230,9 @@ const clock = new THREE.Clock();
 const startTime = Date.now();
 let cameraOffset = 0;
 
-function render(time) {
+function animate(time) {
+  stats.begin();
+
   if (resizeRendererToDisplaySize(renderer)) {
     const canvas = renderer.domElement;
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -235,11 +242,14 @@ function render(time) {
   // we build clouds only once or when config is changed
   if (buildClouds) {
     buildClouds = false;
+    console.log('building clouds');
 
     scene1.remove(mesh1);
     scene1.remove(mesh2);
 
     const geometries = [];
+    let cloudZ = 0;
+    const cloudIncrement = config.cameraTravelDistance / config.cloudCount;
     for (let i = 0; i < config.cloudCount; i++) {
       const geo = planeGeometry.clone();
 
@@ -251,7 +261,8 @@ function render(time) {
       const x = getRandomArbitrary(-xHalf, xHalf);
       const yHalf = config.verticalSpreadFactor * 0.5;
       const y = getRandomArbitrary(-yHalf, yHalf);
-      const z = i;
+      const z = cloudZ;
+      cloudZ += cloudIncrement;
       geo.translate(x, y, z);
 
       // scale
@@ -292,6 +303,10 @@ function render(time) {
       const deltaSeconds = clock.getDelta();
 
       carousel.items.forEach((item, index) => {
+        if (index === carousel.activeIndex) {
+          item.root.visible = true;
+        }
+
         if (item.positioner) {
           item.root.position.set(
             camPos.x + item.positioner.x,
@@ -316,7 +331,9 @@ function render(time) {
   // scene1 should clear when rendering next time
   renderer.autoClear = true;
 
-  requestAnimationFrame(render);
+  stats.end();
+
+  requestAnimationFrame(animate);
 }
 
 let bodyRect;
@@ -346,7 +363,7 @@ window.addEventListener("scroll", onScroll);
 recalculateRects();
 onScroll();
 
-render();
+animate();
 
 // Listeners for carousel
 const prevButton = document.querySelector(".carousel-button-prev");

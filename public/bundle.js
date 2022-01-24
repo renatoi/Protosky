@@ -50755,39 +50755,49 @@
 	  }
 
 	  next() {
-	    const currPositioner = this.items[this.activeIndex].positioner;
-	    new exports$1.Tween(currPositioner)
+	    const currItem = this.items[this.activeIndex];
+	    new exports$1.Tween(currItem.positioner)
 	      .to(this.itemLeftPos, this.animDuration * 1000)
 	      .easing(exports$1.Easing.Quadratic.In)
+	      .onComplete(() => {
+	        currItem.root.visible = false;
+	      })
 	      .start();
 
 	    this.activeIndex =
 	      this.activeIndex + 1 === this.items.length ? 0 : this.activeIndex + 1;
 
 	    // new one
-	    this.items[this.activeIndex].positioner = {
+	    const newItem = this.items[this.activeIndex];
+	    newItem.positioner = {
 	      ...this.itemRightPos,
 	    };
-	    new exports$1.Tween(this.items[this.activeIndex].positioner)
+	    newItem.root.visible = true;
+	    new exports$1.Tween(newItem.positioner)
 	      .to(this.itemMiddlePos, this.animDuration * 1000)
 	      .easing(exports$1.Easing.Quadratic.Out)
 	      .start();
 	  }
 
 	  prev() {
-	    const currPositioner = this.items[this.activeIndex].positioner;
-	    new exports$1.Tween(currPositioner)
+	    const currItem = this.items[this.activeIndex];
+	    new exports$1.Tween(currItem.positioner)
 	      .to(this.itemRightPos, this.animDuration * 1000)
 	      .easing(exports$1.Easing.Quadratic.In)
+	      .onComplete(() => {
+	        currItem.root.visible = false;
+	      })
 	      .start();
 
 	    this.activeIndex =
 	      this.activeIndex === 0 ? this.items.length - 1 : this.activeIndex - 1;
 
 	    // new one
-	    this.items[this.activeIndex].positioner = {
+	    const newItem = this.items[this.activeIndex];
+	    newItem.positioner = {
 	      ...this.itemLeftPos,
 	    };
+	    newItem.root.visible = true;
 	    new exports$1.Tween(this.items[this.activeIndex].positioner)
 	      .to(this.itemMiddlePos, this.animDuration * 1000)
 	      .easing(exports$1.Easing.Quadratic.Out)
@@ -50795,14 +50805,40 @@
 	  }
 	}
 
+	var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+	var stats_min = {exports: {}};
+
+	(function (module, exports) {
+	// stats.js - http://github.com/mrdoob/stats.js
+	(function(f,e){module.exports=e();})(commonjsGlobal,function(){var f=function(){function e(a){c.appendChild(a.dom);return a}function u(a){for(var d=0;d<c.children.length;d++)c.children[d].style.display=d===a?"block":"none";l=a;}var l=0,c=document.createElement("div");c.style.cssText="position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click",function(a){a.preventDefault();
+	u(++l%c.children.length);},!1);var k=(performance||Date).now(),g=k,a=0,r=e(new f.Panel("FPS","#0ff","#002")),h=e(new f.Panel("MS","#0f0","#020"));if(self.performance&&self.performance.memory)var t=e(new f.Panel("MB","#f08","#201"));u(0);return {REVISION:16,dom:c,addPanel:e,showPanel:u,begin:function(){k=(performance||Date).now();},end:function(){a++;var c=(performance||Date).now();h.update(c-k,200);if(c>g+1E3&&(r.update(1E3*a/(c-g),100),g=c,a=0,t)){var d=performance.memory;t.update(d.usedJSHeapSize/
+	1048576,d.jsHeapSizeLimit/1048576);}return c},update:function(){k=this.end();},domElement:c,setMode:u}};f.Panel=function(e,f,l){var c=Infinity,k=0,g=Math.round,a=g(window.devicePixelRatio||1),r=80*a,h=48*a,t=3*a,v=2*a,d=3*a,m=15*a,n=74*a,p=30*a,q=document.createElement("canvas");q.width=r;q.height=h;q.style.cssText="width:80px;height:48px";var b=q.getContext("2d");b.font="bold "+9*a+"px Helvetica,Arial,sans-serif";b.textBaseline="top";b.fillStyle=l;b.fillRect(0,0,r,h);b.fillStyle=f;b.fillText(e,t,v);
+	b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return {dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p));}}};return f});
+	}(stats_min));
+
+	var Stats = stats_min.exports;
+
+	const stats = new Stats();
+	stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+	document.body.appendChild( stats.dom );
+
 	let buildClouds = true;
 
 	const config = {
 	  cameraVelocity: 0.03,
-	  cameraTravelDistance: 8000,
-	  cameraHeight: 250,
+	  cameraTravelDistance: 1000,
+	  cameraHeight: 100,
+	  _cameraScrollOffset: 40,
+	  get cameraScrollOffset() {
+	    return this._cameraScrollOffset;
+	  },
+	  set cameraScrollOffset(value) {
+	    this._cameraScrollOffset = value;
+	    buildClouds = true;
+	  },
 
-	  _cloudCount: 8000,
+	  _cloudCount: 200,
 	  get cloudCount() {
 	    return this._cloudCount;
 	  },
@@ -50811,7 +50847,7 @@
 	    buildClouds = true;
 	  },
 
-	  _horizontalSpreadFactor: 1000,
+	  _horizontalSpreadFactor: 400,
 	  get horizontalSpreadFactor() {
 	    return this._horizontalSpreadFactor;
 	  },
@@ -50820,21 +50856,12 @@
 	    buildClouds = true;
 	  },
 
-	  _verticalSpreadFactor: 100,
+	  _verticalSpreadFactor: 15,
 	  get verticalSpreadFactor() {
 	    return this._verticalSpreadFactor;
 	  },
 	  set verticalSpreadFactor(value) {
 	    this._verticalSpreadFactor = value;
-	    buildClouds = true;
-	  },
-
-	  _cameraScrollOffset: 100,
-	  get cameraScrollOffset() {
-	    return this._cameraScrollOffset;
-	  },
-	  set cameraScrollOffset(value) {
-	    this._cameraScrollOffset = value;
 	    buildClouds = true;
 	  },
 	};
@@ -50896,7 +50923,7 @@
 	{
 	  const color = scene1.background;
 	  const near = 1;
-	  const far = 2700;
+	  const far = 900;
 	  scene1.fog = new Fog(color, near, far);
 	  const fogFolder = gui.addFolder("Fog");
 	  const fogGUIHelper = new FogGUIHelper(scene1.fog, scene1.background);
@@ -50934,7 +50961,7 @@
 	    mixer: null,
 	    animActions: [],
 	    activeAction: [],
-	    positioner: null,
+	    positioner: { x: -1000, y: -1000 },
 	  },
 	  {
 	    modelPath: "./Dragons/Kalecgos.glb",
@@ -50942,7 +50969,7 @@
 	    mixer: null,
 	    animActions: [],
 	    activeAction: [],
-	    positioner: null,
+	    positioner: { x: -1000, y: -1000 },
 	  },
 	  {
 	    modelPath: "./Dragons/Nozdormu.glb",
@@ -50950,7 +50977,7 @@
 	    mixer: null,
 	    animActions: [],
 	    activeAction: [],
-	    positioner: null,
+	    positioner: { x: -1000, y: -1000 },
 	  },
 	];
 
@@ -50968,6 +50995,7 @@
 	    const root = gltf.scene;
 	    root.rotateOnWorldAxis(new Vector3(0, 1, 0), 45);
 	    root.scale.set(0.15, 0.15, 0.15);
+	    root.visible = false;
 	    dragons[i].root = root;
 
 	    const mixer = new AnimationMixer(gltf.scene);
@@ -50991,7 +51019,7 @@
 
 	  allModelsLoaded = true;
 
-	  render();
+	  animate();
 	});
 
 	// load dino models
@@ -51014,7 +51042,9 @@
 	const startTime = Date.now();
 	let cameraOffset = 0;
 
-	function render(time) {
+	function animate(time) {
+	  stats.begin();
+
 	  if (resizeRendererToDisplaySize(renderer)) {
 	    const canvas = renderer.domElement;
 	    camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -51024,11 +51054,14 @@
 	  // we build clouds only once or when config is changed
 	  if (buildClouds) {
 	    buildClouds = false;
+	    console.log('building clouds');
 
 	    scene1.remove(mesh1);
 	    scene1.remove(mesh2);
 
 	    const geometries = [];
+	    let cloudZ = 0;
+	    const cloudIncrement = config.cameraTravelDistance / config.cloudCount;
 	    for (let i = 0; i < config.cloudCount; i++) {
 	      const geo = planeGeometry.clone();
 
@@ -51040,7 +51073,8 @@
 	      const x = getRandomArbitrary(-xHalf, xHalf);
 	      const yHalf = config.verticalSpreadFactor * 0.5;
 	      const y = getRandomArbitrary(-yHalf, yHalf);
-	      const z = i;
+	      const z = cloudZ;
+	      cloudZ += cloudIncrement;
 	      geo.translate(x, y, z);
 
 	      // scale
@@ -51081,6 +51115,10 @@
 	      const deltaSeconds = clock.getDelta();
 
 	      carousel.items.forEach((item, index) => {
+	        if (index === carousel.activeIndex) {
+	          item.root.visible = true;
+	        }
+
 	        if (item.positioner) {
 	          item.root.position.set(
 	            camPos.x + item.positioner.x,
@@ -51105,7 +51143,9 @@
 	  // scene1 should clear when rendering next time
 	  renderer.autoClear = true;
 
-	  requestAnimationFrame(render);
+	  stats.end();
+
+	  requestAnimationFrame(animate);
 	}
 
 	let bodyRect;
@@ -51135,7 +51175,7 @@
 	recalculateRects();
 	onScroll();
 
-	render();
+	animate();
 
 	// Listeners for carousel
 	const prevButton = document.querySelector(".carousel-button-prev");
