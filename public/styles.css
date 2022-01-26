@@ -1,47 +1,105 @@
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
 .spacer {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
 }
 
 .section {
-    position: relative;
-    background: rgb(69,132,180);
-    /* background: linear-gradient(0deg, var(--bg-gradient-ground) 0%, rgba(30,72,119,1) 100%); */
+  position: relative;
+  background: rgb(69, 132, 180);
+  /* background: linear-gradient(0deg, var(--bg-gradient-ground) 0%, rgba(30,72,119,1) 100%); */
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .carousel-buttons {
-    position: absolute;
-    inset: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  padding: 48px;
+}
+
+.carousel-buttons-container {
+  display: flex;
+  column-gap: 48px;
 }
 
 .carousel-button {
-    border: 0;
-    padding: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 100%;
-    cursor: pointer;
+  border: 0;
+  padding: 0;
+  color: white;
+  width: 64px;
+  height: 64px;
+  background-size: contain;
+  border-radius: 100%;
+  cursor: pointer;
+  box-shadow: 3px 3px 12px rgba(0, 0, 0, .6);
+  outline: solid 3px transparent;
+  transition: transform 0.3s ease-out, outline 0.3s ease-out;
+  user-select: none;
+}
+
+.carousel-button--selected {
+  transform: scale3d(1.5, 1.5, 1.5);
+  outline: solid 3px #fff;
 }
 
 #c {
-    width: 100%;
-    height: 100vh;
-    display: block;
+  width: 100%;
+  height: 100vh;
+  display: block;
+}
+
+.carousel-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.carousel-item {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  display: flex;
+  justify-content: space-around;
+}
+
+.carousel-item--animate {
+  transition: transform var(--carousel-anim-duration);
+}
+
+.carousel-item--active {
+  transform: translate3d(0%, 0%, 0);
+  visibility: visible;
+}
+
+.carousel-item--offscreen-right {
+  transform: translate3d(100%, -30%, 0);
+}
+
+.carousel-item--offscreen-left {
+  transform: translate3d(-100%, -30%, 0);
 }

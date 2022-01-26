@@ -1,4 +1,4 @@
-export const resizeRendererToDisplaySize = (renderer) => {
+export const resizeRendererToDisplaySize = (renderer: THREE.Renderer): boolean => {
   const canvas = renderer.domElement;
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -15,6 +15,6 @@ export const resizeRendererToDisplaySize = (renderer) => {
 /**
  * Returns a random number between min (inclusive) and max (exclusive)
  */
- export const getRandomArbitrary = (min, max) => {
+ export const getRandomArbitrary = (min: number, max: number) => {
   return Math.random() * (max - min) + min;
 }

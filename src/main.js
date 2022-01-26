@@ -14,10 +14,10 @@ document.body.appendChild( stats.dom );
 let buildClouds = true;
 
 const config = {
-  cameraVelocity: 0.03,
+  cameraVelocity: 0.01,
   cameraTravelDistance: 1000,
-  cameraHeight: 100,
-  _cameraScrollOffset: 40,
+  cameraHeight: 200,
+  _cameraScrollOffset: 100,
   get cameraScrollOffset() {
     return this._cameraScrollOffset;
   },
