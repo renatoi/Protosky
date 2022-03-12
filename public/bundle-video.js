@@ -2313,131 +2313,6 @@
 	}
 
 	/**
-	 * @param {String} HTML representing a single element
-	 * @return {Element}
-	 */
-	function htmlToElement(html) {
-	    var template = document.createElement('template');
-	    html = html.trim();
-	    template.innerHTML = html;
-	    return template.content.firstChild;
-	}
-
-	var _Carousel_instances, _Carousel_activeIndex, _Carousel_animDurationSec, _Carousel_prevIndex, _Carousel_lastElement, _Carousel_items, _Carousel_allButtons, _Carousel_selectActiveButton, _Carousel_createActiveItem, _Carousel_flyToOffscreen, _Carousel_flyToCenter;
-	class Carousel {
-	    constructor(options) {
-	        _Carousel_instances.add(this);
-	        this.buttonsEl = null;
-	        this.stageEl = null;
-	        _Carousel_activeIndex.set(this, 0);
-	        _Carousel_animDurationSec.set(this, 1.5);
-	        _Carousel_prevIndex.set(this, 0);
-	        _Carousel_lastElement.set(this, void 0);
-	        _Carousel_items.set(this, void 0);
-	        _Carousel_allButtons.set(this, []);
-	        Object.assign(this, options);
-	        __classPrivateFieldSet(this, _Carousel_items, this.data.map((videoData) => {
-	            return htmlToElement(`
-      <div class="carousel-item">
-        <video autoplay muted loop playsinline>
-          <source src=${videoData.srcWebm} type="video/webm"></source>
-        </video>
-      </div>`);
-	        }), "f");
-	        this.stageEl.style.setProperty("--carousel-anim-duration", `${this.animDurationSec}s`);
-	        const buttonsContainer = document.createElement("div");
-	        buttonsContainer.classList.add("carousel-buttons-container");
-	        this.data.forEach((videoData, index) => {
-	            const { buttonImage, buttonLabel } = videoData;
-	            const button = htmlToElement(`<button
-          type="button"
-          class="carousel-button"
-          data-index="${index}"
-          style="background-image: url(${buttonImage})"
-        >
-          <span class="visually-hidden">${buttonLabel}</span>
-        </button>`);
-	            __classPrivateFieldGet(this, _Carousel_allButtons, "f").push(button);
-	            buttonsContainer.appendChild(button);
-	        });
-	        this.buttonsEl.appendChild(buttonsContainer);
-	        this.buttonsEl.addEventListener("click", (e) => {
-	            const target = e.target;
-	            const closestButton = target.closest(".carousel-button");
-	            if (closestButton) {
-	                const index = parseInt(target.dataset.index, 10);
-	                this.activeIndex = index;
-	            }
-	        });
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToCenter).call(this, "right");
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_selectActiveButton).call(this);
-	    }
-	    get prevIndex() {
-	        return __classPrivateFieldGet(this, _Carousel_prevIndex, "f");
-	    }
-	    get activeIndex() {
-	        return __classPrivateFieldGet(this, _Carousel_activeIndex, "f");
-	    }
-	    set activeIndex(value) {
-	        if (value === __classPrivateFieldGet(this, _Carousel_activeIndex, "f"))
-	            return;
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToOffscreen).call(this, "left");
-	        __classPrivateFieldSet(this, _Carousel_activeIndex, value, "f");
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToCenter).call(this, "right");
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_selectActiveButton).call(this);
-	    }
-	    get animDurationSec() {
-	        return __classPrivateFieldGet(this, _Carousel_animDurationSec, "f");
-	    }
-	    set animDurationSec(value) {
-	        __classPrivateFieldSet(this, _Carousel_animDurationSec, value, "f");
-	        this.stageEl.style.setProperty("--carousel-anim-duration", `${this.animDurationSec}s`);
-	    }
-	    next() {
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToOffscreen).call(this, "left");
-	        this.activeIndex =
-	            this.activeIndex + 1 === __classPrivateFieldGet(this, _Carousel_items, "f").length ? 0 : this.activeIndex + 1;
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToCenter).call(this, "right");
-	    }
-	    prev() {
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToOffscreen).call(this, "right");
-	        this.activeIndex =
-	            this.activeIndex === 0 ? __classPrivateFieldGet(this, _Carousel_items, "f").length - 1 : this.activeIndex - 1;
-	        __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_flyToCenter).call(this, "left");
-	    }
-	}
-	_Carousel_activeIndex = new WeakMap(), _Carousel_animDurationSec = new WeakMap(), _Carousel_prevIndex = new WeakMap(), _Carousel_lastElement = new WeakMap(), _Carousel_items = new WeakMap(), _Carousel_allButtons = new WeakMap(), _Carousel_instances = new WeakSet(), _Carousel_selectActiveButton = function _Carousel_selectActiveButton() {
-	    __classPrivateFieldGet(this, _Carousel_allButtons, "f").forEach((button) => button.classList.remove("carousel-button--selected"));
-	    console.log(__classPrivateFieldGet(this, _Carousel_allButtons, "f"));
-	    __classPrivateFieldGet(this, _Carousel_allButtons, "f")[this.activeIndex].classList.add("carousel-button--selected");
-	}, _Carousel_createActiveItem = function _Carousel_createActiveItem() {
-	    const item = __classPrivateFieldGet(this, _Carousel_items, "f")[this.activeIndex].cloneNode(true);
-	    this.stageEl.appendChild(item);
-	    __classPrivateFieldSet(this, _Carousel_lastElement, item, "f");
-	    return item;
-	}, _Carousel_flyToOffscreen = function _Carousel_flyToOffscreen(dir) {
-	    const currItem = __classPrivateFieldGet(this, _Carousel_lastElement, "f");
-	    currItem.classList.add("carousel-item--animate");
-	    currItem.classList.add(`carousel-item--offscreen-${dir}`);
-	    currItem.ontransitionend = () => {
-	        currItem.parentNode.removeChild(currItem);
-	    };
-	}, _Carousel_flyToCenter = function _Carousel_flyToCenter(from) {
-	    const newItem = __classPrivateFieldGet(this, _Carousel_instances, "m", _Carousel_createActiveItem).call(this);
-	    const classNameFrom = `carousel-item--offscreen-${from}`;
-	    newItem.classList.add(classNameFrom);
-	    requestAnimationFrame(() => {
-	        newItem.classList.add("carousel-item--animate");
-	        newItem.classList.add("carousel-item--active");
-	        newItem.classList.remove(classNameFrom);
-	        newItem.ontransitionend = () => {
-	            newItem.classList.remove("carousel-item--animate");
-	            newItem.ontransitionend = null;
-	        };
-	    });
-	};
-
-	/**
 	 * @license
 	 * Copyright 2010-2021 Three.js Authors
 	 * SPDX-License-Identifier: MIT
@@ -44956,272 +44831,6 @@
 
 	}
 
-	/**
-		 * @param  {Array<BufferGeometry>} geometries
-		 * @param  {Boolean} useGroups
-		 * @return {BufferGeometry}
-		 */
-	function mergeBufferGeometries( geometries, useGroups = false ) {
-
-		const isIndexed = geometries[ 0 ].index !== null;
-
-		const attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
-		const morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
-
-		const attributes = {};
-		const morphAttributes = {};
-
-		const morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
-
-		const mergedGeometry = new BufferGeometry();
-
-		let offset = 0;
-
-		for ( let i = 0; i < geometries.length; ++ i ) {
-
-			const geometry = geometries[ i ];
-			let attributesCount = 0;
-
-			// ensure that all geometries are indexed, or none
-
-			if ( isIndexed !== ( geometry.index !== null ) ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
-				return null;
-
-			}
-
-			// gather attributes, exit early if they're different
-
-			for ( const name in geometry.attributes ) {
-
-				if ( ! attributesUsed.has( name ) ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
-					return null;
-
-				}
-
-				if ( attributes[ name ] === undefined ) attributes[ name ] = [];
-
-				attributes[ name ].push( geometry.attributes[ name ] );
-
-				attributesCount ++;
-
-			}
-
-			// ensure geometries have the same number of attributes
-
-			if ( attributesCount !== attributesUsed.size ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
-				return null;
-
-			}
-
-			// gather morph attributes, exit early if they're different
-
-			if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
-				return null;
-
-			}
-
-			for ( const name in geometry.morphAttributes ) {
-
-				if ( ! morphAttributesUsed.has( name ) ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
-					return null;
-
-				}
-
-				if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
-
-				morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
-
-			}
-
-			// gather .userData
-
-			mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
-			mergedGeometry.userData.mergedUserData.push( geometry.userData );
-
-			if ( useGroups ) {
-
-				let count;
-
-				if ( isIndexed ) {
-
-					count = geometry.index.count;
-
-				} else if ( geometry.attributes.position !== undefined ) {
-
-					count = geometry.attributes.position.count;
-
-				} else {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
-					return null;
-
-				}
-
-				mergedGeometry.addGroup( offset, count, i );
-
-				offset += count;
-
-			}
-
-		}
-
-		// merge indices
-
-		if ( isIndexed ) {
-
-			let indexOffset = 0;
-			const mergedIndex = [];
-
-			for ( let i = 0; i < geometries.length; ++ i ) {
-
-				const index = geometries[ i ].index;
-
-				for ( let j = 0; j < index.count; ++ j ) {
-
-					mergedIndex.push( index.getX( j ) + indexOffset );
-
-				}
-
-				indexOffset += geometries[ i ].attributes.position.count;
-
-			}
-
-			mergedGeometry.setIndex( mergedIndex );
-
-		}
-
-		// merge attributes
-
-		for ( const name in attributes ) {
-
-			const mergedAttribute = mergeBufferAttributes( attributes[ name ] );
-
-			if ( ! mergedAttribute ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' attribute.' );
-				return null;
-
-			}
-
-			mergedGeometry.setAttribute( name, mergedAttribute );
-
-		}
-
-		// merge morph attributes
-
-		for ( const name in morphAttributes ) {
-
-			const numMorphTargets = morphAttributes[ name ][ 0 ].length;
-
-			if ( numMorphTargets === 0 ) break;
-
-			mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-			mergedGeometry.morphAttributes[ name ] = [];
-
-			for ( let i = 0; i < numMorphTargets; ++ i ) {
-
-				const morphAttributesToMerge = [];
-
-				for ( let j = 0; j < morphAttributes[ name ].length; ++ j ) {
-
-					morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
-
-				}
-
-				const mergedMorphAttribute = mergeBufferAttributes( morphAttributesToMerge );
-
-				if ( ! mergedMorphAttribute ) {
-
-					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
-					return null;
-
-				}
-
-				mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
-
-			}
-
-		}
-
-		return mergedGeometry;
-
-	}
-
-	/**
-	 * @param {Array<BufferAttribute>} attributes
-	 * @return {BufferAttribute}
-	 */
-	function mergeBufferAttributes( attributes ) {
-
-		let TypedArray;
-		let itemSize;
-		let normalized;
-		let arrayLength = 0;
-
-		for ( let i = 0; i < attributes.length; ++ i ) {
-
-			const attribute = attributes[ i ];
-
-			if ( attribute.isInterleavedBufferAttribute ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.' );
-				return null;
-
-			}
-
-			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-			if ( TypedArray !== attribute.array.constructor ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.' );
-				return null;
-
-			}
-
-			if ( itemSize === undefined ) itemSize = attribute.itemSize;
-			if ( itemSize !== attribute.itemSize ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.' );
-				return null;
-
-			}
-
-			if ( normalized === undefined ) normalized = attribute.normalized;
-			if ( normalized !== attribute.normalized ) {
-
-				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.' );
-				return null;
-
-			}
-
-			arrayLength += attribute.array.length;
-
-		}
-
-		const array = new TypedArray( arrayLength );
-		let offset = 0;
-
-		for ( let i = 0; i < attributes.length; ++ i ) {
-
-			array.set( attributes[ i ].array, offset );
-
-			offset += attributes[ i ].array.length;
-
-		}
-
-		return new BufferAttribute( array, itemSize, normalized );
-
-	}
-
 	const resizeRendererToDisplaySize = (renderer) => {
 	    const canvas = renderer.domElement;
 	    const width = canvas.clientWidth;
@@ -45268,35 +44877,183 @@
 
 	}
 
-	var _Clouds_cloudCount, _Clouds_horizontalSpreadFactor, _Clouds_verticalSpreadFactor, _Clouds_buildClouds, _Clouds_startTime, _Clouds_stats, _Clouds_material, _Clouds_renderer, _Clouds_camera, _Clouds_scene, _Clouds_planeGeometry, _Clouds_canvasRect, _Clouds_canvasTopPageY, _Clouds_canvasBottomPageY, _Clouds_scrollPercent, _Clouds_mesh1, _Clouds_mesh2;
+	var _CloudMesh_material;
+	class CloudMesh {
+	    constructor(options) {
+	        _CloudMesh_material.set(this, void 0);
+	        Object.assign(this, options);
+	        // texture
+	        const texture1 = new TextureLoader().load("rc-sky-clouds-000.png");
+	        texture1.magFilter = LinearFilter;
+	        texture1.minFilter = LinearMipmapLinearFilter;
+	        const texture2 = new TextureLoader().load("rc-sky-clouds-001.png");
+	        texture2.magFilter = LinearFilter;
+	        texture2.minFilter = LinearMipmapLinearFilter;
+	        // material
+	        // this.#material = new THREE.MeshBasicMaterial({
+	        //   map: texture1,
+	        //   side: THREE.DoubleSide,
+	        //   transparent: true,
+	        //   depthTest: false,
+	        //   depthWrite: false,
+	        // });
+	        // this.#material.onBeforeCompile = this.onBeforeCompileMaterial;
+	        __classPrivateFieldSet(this, _CloudMesh_material, new ShaderMaterial({
+	            uniforms: {
+	                textures: { value: [texture1, texture2] },
+	                diffuse: { value: new Color(0xffffff) },
+	                opacity: { value: 1.0 },
+	                fogColor: { value: this.fogColor },
+	                fogNear: { value: this.fogNear },
+	                fogFar: { value: this.fogFar },
+	            },
+	            vertexShader: CloudMesh.vertexShader(),
+	            fragmentShader: CloudMesh.fragmentShader(),
+	            side: DoubleSide,
+	            transparent: true,
+	            depthTest: false,
+	            depthWrite: false,
+	            fog: true,
+	        }), "f");
+	    }
+	    get cloudIncrement() {
+	        return ((this.cameraTravelDistance * 0.5) / this.cloudCount) * 2;
+	    }
+	    create() {
+	        const cloudCount = this.cloudCount;
+	        const cloudIncrement = this.cloudIncrement;
+	        const planeGeo = new PlaneGeometry(64, 64);
+	        const mesh = new InstancedMesh(planeGeo, __classPrivateFieldGet(this, _CloudMesh_material, "f"), cloudCount * 2);
+	        // dummy is used to easily set transforms on each mesh instance, otherwise we would need to use a matrix
+	        const dummy = new Object3D();
+	        // texture index buffer is used to swap between 2 different textures at random
+	        const textureIndices = [];
+	        // set properties for each cloud
+	        for (let i = 0; i < cloudCount; i++) {
+	            const mirrorIndex = i + cloudCount;
+	            // randomly pick a texture: 0 for texture A and 1 for texture B
+	            const textureIndex = Math.round(Math.random());
+	            textureIndices[i] = textureIndex;
+	            textureIndices[mirrorIndex] = textureIndex;
+	            // rotate
+	            dummy.rotateZ(Math.random() * Math.PI);
+	            // position
+	            const xHalf = this.horizontalSpreadFactor * 0.5;
+	            const x = getRandomArbitrary(-xHalf, xHalf);
+	            const yHalf = this.verticalSpreadFactor * 0.5;
+	            const y = getRandomArbitrary(-yHalf, yHalf);
+	            const z = cloudIncrement * i;
+	            dummy.position.set(x, y, z);
+	            // scale
+	            const scale = getRandomArbitrary(this.scaleMin, this.scaleMax);
+	            dummy.scale.set(scale, scale, 1);
+	            dummy.updateMatrix();
+	            mesh.setMatrixAt(i, dummy.matrix);
+	            dummy.position.set(x, y, cloudIncrement * mirrorIndex);
+	            dummy.updateMatrix();
+	            mesh.setMatrixAt(mirrorIndex, dummy.matrix);
+	            mesh.instanceMatrix.needsUpdate = true;
+	        }
+	        // we sent textureIndex as an attribute to the shader
+	        planeGeo.setAttribute("textureIndex", new InstancedBufferAttribute(new Float32Array(textureIndices), 1));
+	        return mesh;
+	    }
+	    static vertexShader() {
+	        return `
+          #include <common>
+          #include <fog_pars_vertex>
+          attribute float textureIndex;
+    
+          varying vec2 vUv;
+          varying float vTextureIndex;
+    
+          void main() {
+            vUv = uv;
+    
+            vec3 transformed = vec3( position );
+            vec4 mvPosition = vec4( transformed, 1.0 );
+            #ifdef USE_INSTANCING
+              mvPosition = instanceMatrix * mvPosition;
+            #endif
+            mvPosition = modelViewMatrix * mvPosition;
+            gl_Position = projectionMatrix * mvPosition;
+    
+            vFogDepth = - mvPosition.z;
+            vTextureIndex = textureIndex;
+          }
+        `;
+	    }
+	    static fragmentShader() {
+	        return `
+          #include <common>
+          #include <fog_pars_fragment>
+          varying vec2 vUv;
+          varying float vTextureIndex;
+    
+          uniform vec3 diffuse;
+          uniform float opacity;
+          uniform sampler2D textures[2];
+          uniform float alphaTest;
+    
+          void main() {
+            vec4 diffuseColor = vec4( diffuse, opacity );
+    
+            vec4 sampledDiffuseColor;
+            float x = vTextureIndex;
+            sampledDiffuseColor = texture2D(textures[0], vUv) * step(-0.1, x) * step(x, 0.1);
+            sampledDiffuseColor += texture2D(textures[1], vUv) * step(0.9, x) * step(x, 1.1);
+    
+            diffuseColor *= sampledDiffuseColor;
+    
+            if (diffuseColor.a < alphaTest) discard;
+
+            ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
+            reflectedLight.indirectDiffuse += vec3( 1.0 );
+            reflectedLight.indirectDiffuse *= diffuseColor.rgb;
+            vec3 outgoingLight = reflectedLight.indirectDiffuse;
+
+            #include <output_fragment>
+            #include <encodings_fragment>
+            #include <fog_fragment>
+            
+            // fade if close to camera
+            gl_FragColor.a *= pow(gl_FragCoord.z, 100.0);
+
+          }
+        `;
+	    }
+	}
+	_CloudMesh_material = new WeakMap();
+
+	var _Clouds_instances, _Clouds_cloudCount, _Clouds_horizontalSpreadFactor, _Clouds_verticalSpreadFactor, _Clouds_scaleMin, _Clouds_scaleMax, _Clouds_buildClouds, _Clouds_startTime, _Clouds_stats, _Clouds_renderer, _Clouds_camera, _Clouds_scene, _Clouds_canvasRect, _Clouds_canvasTopPageY, _Clouds_canvasBottomPageY, _Clouds_scrollPercent, _Clouds_mesh, _Clouds_animate, _Clouds_recalculateRects, _Clouds_onScroll;
 	class Clouds {
 	    constructor(options) {
+	        _Clouds_instances.add(this);
 	        this.canvas = null;
 	        this.cameraVelocity = 0.01;
 	        this.cameraTravelDistance = 1000;
-	        this.cameraHeightFrom = 60;
+	        this.cameraHeightFrom = 30;
 	        this.cameraHeightTo = 14;
-	        this.backgroundColor = '#74B2E2';
+	        this.backgroundColor = "#74B2E2";
 	        this.fogEnable = true;
 	        this.fogNear = 1;
 	        this.fogFar = 900;
-	        _Clouds_cloudCount.set(this, 200);
+	        _Clouds_cloudCount.set(this, 600);
 	        _Clouds_horizontalSpreadFactor.set(this, 400);
 	        _Clouds_verticalSpreadFactor.set(this, 3);
+	        _Clouds_scaleMin.set(this, 0.5);
+	        _Clouds_scaleMax.set(this, 0.85);
 	        _Clouds_buildClouds.set(this, true);
 	        _Clouds_startTime.set(this, Date.now());
 	        _Clouds_stats.set(this, void 0);
-	        _Clouds_material.set(this, void 0);
 	        _Clouds_renderer.set(this, void 0);
 	        _Clouds_camera.set(this, void 0);
 	        _Clouds_scene.set(this, void 0);
-	        _Clouds_planeGeometry.set(this, void 0);
 	        _Clouds_canvasRect.set(this, void 0);
 	        _Clouds_canvasTopPageY.set(this, void 0);
 	        _Clouds_canvasBottomPageY.set(this, void 0);
 	        _Clouds_scrollPercent.set(this, void 0);
-	        _Clouds_mesh1.set(this, void 0);
-	        _Clouds_mesh2.set(this, void 0);
+	        _Clouds_mesh.set(this, void 0);
 	        Object.assign(this, options);
 	    }
 	    get cloudCount() {
@@ -45320,6 +45077,20 @@
 	        __classPrivateFieldSet(this, _Clouds_verticalSpreadFactor, value, "f");
 	        __classPrivateFieldSet(this, _Clouds_buildClouds, true, "f");
 	    }
+	    get scaleMin() {
+	        return __classPrivateFieldGet(this, _Clouds_scaleMin, "f");
+	    }
+	    set scaleMin(value) {
+	        __classPrivateFieldSet(this, _Clouds_scaleMin, value, "f");
+	        __classPrivateFieldSet(this, _Clouds_buildClouds, true, "f");
+	    }
+	    get scaleMax() {
+	        return __classPrivateFieldGet(this, _Clouds_scaleMax, "f");
+	    }
+	    set scaleMax(value) {
+	        __classPrivateFieldSet(this, _Clouds_scaleMax, value, "f");
+	        __classPrivateFieldSet(this, _Clouds_buildClouds, true, "f");
+	    }
 	    get scene() {
 	        return __classPrivateFieldGet(this, _Clouds_scene, "f");
 	    }
@@ -45338,7 +45109,7 @@
 	        const fov = 30;
 	        const aspect = 2; // the canvas default
 	        const near = 0.1;
-	        const far = 3000;
+	        const far = 4000;
 	        const camera = new PerspectiveCamera(fov, aspect, near, far);
 	        camera.position.set(0, this.cameraHeightFrom, this.cameraTravelDistance * 1.2);
 	        __classPrivateFieldSet(this, _Clouds_camera, camera, "f");
@@ -45350,128 +45121,97 @@
 	        if (this.fogEnable) {
 	            __classPrivateFieldGet(this, _Clouds_scene, "f").fog = new Fog(this.backgroundColor, this.fogNear, this.fogFar);
 	        }
-	        // texture
-	        const loader = new TextureLoader();
-	        const texture = loader.load("cloud10.png");
-	        texture.magFilter = LinearFilter;
-	        texture.minFilter = LinearMipmapLinearFilter;
-	        // material
-	        __classPrivateFieldSet(this, _Clouds_material, new MeshBasicMaterial({
-	            map: texture,
-	            side: DoubleSide,
-	            transparent: true,
-	            depthTest: false,
-	            depthWrite: false,
-	        }), "f");
-	        // geometry
-	        __classPrivateFieldSet(this, _Clouds_planeGeometry, new PlaneGeometry(64, 64), "f");
 	        // do a first run
-	        this.recalculateRects();
-	        this.onScroll();
-	        this.animate();
+	        __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_recalculateRects).call(this);
+	        __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_onScroll).call(this);
+	        __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_animate).call(this);
 	        // add window listeners
-	        window.addEventListener("resize", this.recalculateRects.bind(this));
-	        window.addEventListener("scroll", this.onScroll.bind(this));
-	    }
-	    animate() {
-	        __classPrivateFieldGet(this, _Clouds_stats, "f").begin();
-	        if (resizeRendererToDisplaySize(__classPrivateFieldGet(this, _Clouds_renderer, "f"))) {
-	            const canvas = __classPrivateFieldGet(this, _Clouds_renderer, "f").domElement;
-	            __classPrivateFieldGet(this, _Clouds_camera, "f").aspect = canvas.clientWidth / canvas.clientHeight;
-	            __classPrivateFieldGet(this, _Clouds_camera, "f").updateProjectionMatrix();
-	        }
-	        // we build clouds only once or when config is changed
-	        if (__classPrivateFieldGet(this, _Clouds_buildClouds, "f")) {
-	            __classPrivateFieldSet(this, _Clouds_buildClouds, false, "f");
-	            console.log("building clouds");
-	            __classPrivateFieldGet(this, _Clouds_scene, "f").remove(__classPrivateFieldGet(this, _Clouds_mesh1, "f"));
-	            __classPrivateFieldGet(this, _Clouds_scene, "f").remove(__classPrivateFieldGet(this, _Clouds_mesh2, "f"));
-	            const geometries = [];
-	            let cloudZ = 0;
-	            const cloudIncrement = this.cameraTravelDistance / __classPrivateFieldGet(this, _Clouds_cloudCount, "f");
-	            for (let i = 0; i < __classPrivateFieldGet(this, _Clouds_cloudCount, "f"); i++) {
-	                const geo = __classPrivateFieldGet(this, _Clouds_planeGeometry, "f").clone();
-	                // rotate
-	                geo.rotateZ(Math.random() * Math.PI);
-	                // translate
-	                const xHalf = __classPrivateFieldGet(this, _Clouds_horizontalSpreadFactor, "f") * 0.5;
-	                const x = getRandomArbitrary(-xHalf, xHalf);
-	                const yHalf = __classPrivateFieldGet(this, _Clouds_verticalSpreadFactor, "f") * 0.5;
-	                const y = getRandomArbitrary(-yHalf, yHalf);
-	                const z = cloudZ;
-	                cloudZ += cloudIncrement;
-	                geo.translate(x, y, z);
-	                // scale
-	                const scale = Math.random() * Math.random() * 1.5 + 0.5;
-	                geo.scale(scale, scale, 1);
-	                geometries.push(geo);
-	            }
-	            const mergedGeometry = mergeBufferGeometries(geometries);
-	            // mesh (we add two so we can walk 2 sets of clouds without interruption when we return to the first one)
-	            __classPrivateFieldSet(this, _Clouds_mesh1, new Mesh(mergedGeometry, __classPrivateFieldGet(this, _Clouds_material, "f")), "f");
-	            __classPrivateFieldGet(this, _Clouds_scene, "f").add(__classPrivateFieldGet(this, _Clouds_mesh1, "f"));
-	            __classPrivateFieldSet(this, _Clouds_mesh2, new Mesh(mergedGeometry, __classPrivateFieldGet(this, _Clouds_material, "f")), "f");
-	            __classPrivateFieldGet(this, _Clouds_mesh2, "f").position.setZ(-this.cameraTravelDistance);
-	            __classPrivateFieldGet(this, _Clouds_scene, "f").add(__classPrivateFieldGet(this, _Clouds_mesh2, "f"));
-	        }
-	        // anim camera
-	        const elapsedTime = Date.now() - __classPrivateFieldGet(this, _Clouds_startTime, "f");
-	        const yPos = lerp(this.cameraHeightFrom, this.cameraHeightTo, __classPrivateFieldGet(this, _Clouds_scrollPercent, "f"));
-	        const zPos = (elapsedTime * this.cameraVelocity) % this.cameraTravelDistance;
-	        __classPrivateFieldGet(this, _Clouds_camera, "f").position.set(0, yPos, -zPos + this.cameraTravelDistance);
-	        __classPrivateFieldGet(this, _Clouds_renderer, "f").render(__classPrivateFieldGet(this, _Clouds_scene, "f"), __classPrivateFieldGet(this, _Clouds_camera, "f"));
-	        __classPrivateFieldGet(this, _Clouds_stats, "f").end();
-	        requestAnimationFrame(() => {
-	            this.animate();
-	        });
-	    }
-	    recalculateRects() {
-	        console.log("recalculting");
-	        const bodyRect = document.body.getBoundingClientRect();
-	        __classPrivateFieldSet(this, _Clouds_canvasRect, this.canvas.getBoundingClientRect(), "f");
-	        __classPrivateFieldSet(this, _Clouds_canvasTopPageY, __classPrivateFieldGet(this, _Clouds_canvasRect, "f").top - bodyRect.top, "f");
-	        __classPrivateFieldSet(this, _Clouds_canvasBottomPageY, __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f") + __classPrivateFieldGet(this, _Clouds_canvasRect, "f").height, "f");
-	    }
-	    onScroll() {
-	        const scrollYBottom = window.scrollY + window.innerHeight;
-	        if (scrollYBottom >= __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f") &&
-	            window.scrollY <= __classPrivateFieldGet(this, _Clouds_canvasBottomPageY, "f")) {
-	            const start = __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f");
-	            const end = __classPrivateFieldGet(this, _Clouds_canvasBottomPageY, "f") + __classPrivateFieldGet(this, _Clouds_canvasRect, "f").height;
-	            const current = scrollYBottom;
-	            __classPrivateFieldSet(this, _Clouds_scrollPercent, (current - start) / (end - start), "f");
-	        }
+	        window.addEventListener("resize", __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_recalculateRects).bind(this));
+	        window.addEventListener("scroll", __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_onScroll).bind(this));
 	    }
 	}
-	_Clouds_cloudCount = new WeakMap(), _Clouds_horizontalSpreadFactor = new WeakMap(), _Clouds_verticalSpreadFactor = new WeakMap(), _Clouds_buildClouds = new WeakMap(), _Clouds_startTime = new WeakMap(), _Clouds_stats = new WeakMap(), _Clouds_material = new WeakMap(), _Clouds_renderer = new WeakMap(), _Clouds_camera = new WeakMap(), _Clouds_scene = new WeakMap(), _Clouds_planeGeometry = new WeakMap(), _Clouds_canvasRect = new WeakMap(), _Clouds_canvasTopPageY = new WeakMap(), _Clouds_canvasBottomPageY = new WeakMap(), _Clouds_scrollPercent = new WeakMap(), _Clouds_mesh1 = new WeakMap(), _Clouds_mesh2 = new WeakMap();
+	_Clouds_cloudCount = new WeakMap(), _Clouds_horizontalSpreadFactor = new WeakMap(), _Clouds_verticalSpreadFactor = new WeakMap(), _Clouds_scaleMin = new WeakMap(), _Clouds_scaleMax = new WeakMap(), _Clouds_buildClouds = new WeakMap(), _Clouds_startTime = new WeakMap(), _Clouds_stats = new WeakMap(), _Clouds_renderer = new WeakMap(), _Clouds_camera = new WeakMap(), _Clouds_scene = new WeakMap(), _Clouds_canvasRect = new WeakMap(), _Clouds_canvasTopPageY = new WeakMap(), _Clouds_canvasBottomPageY = new WeakMap(), _Clouds_scrollPercent = new WeakMap(), _Clouds_mesh = new WeakMap(), _Clouds_instances = new WeakSet(), _Clouds_animate = function _Clouds_animate() {
+	    __classPrivateFieldGet(this, _Clouds_stats, "f").begin();
+	    if (resizeRendererToDisplaySize(__classPrivateFieldGet(this, _Clouds_renderer, "f"))) {
+	        const canvas = __classPrivateFieldGet(this, _Clouds_renderer, "f").domElement;
+	        __classPrivateFieldGet(this, _Clouds_camera, "f").aspect = canvas.clientWidth / canvas.clientHeight;
+	        __classPrivateFieldGet(this, _Clouds_camera, "f").updateProjectionMatrix();
+	    }
+	    // we build clouds only once or when config is changed
+	    if (__classPrivateFieldGet(this, _Clouds_buildClouds, "f")) {
+	        __classPrivateFieldSet(this, _Clouds_buildClouds, false, "f");
+	        console.log("building clouds");
+	        __classPrivateFieldGet(this, _Clouds_scene, "f").remove(__classPrivateFieldGet(this, _Clouds_mesh, "f"));
+	        // mesh
+	        const fog = this.scene.fog;
+	        const mesh = new CloudMesh({
+	            cloudCount: this.cloudCount,
+	            cameraTravelDistance: this.cameraTravelDistance,
+	            horizontalSpreadFactor: this.horizontalSpreadFactor,
+	            verticalSpreadFactor: this.verticalSpreadFactor,
+	            fogColor: fog === null || fog === void 0 ? void 0 : fog.color,
+	            fogNear: fog === null || fog === void 0 ? void 0 : fog.near,
+	            fogFar: fog === null || fog === void 0 ? void 0 : fog.far,
+	            scaleMin: __classPrivateFieldGet(this, _Clouds_scaleMin, "f"),
+	            scaleMax: __classPrivateFieldGet(this, _Clouds_scaleMax, "f"),
+	        }).create();
+	        __classPrivateFieldSet(this, _Clouds_mesh, mesh, "f");
+	        __classPrivateFieldGet(this, _Clouds_scene, "f").add(__classPrivateFieldGet(this, _Clouds_mesh, "f"));
+	    }
+	    // anim camera
+	    const elapsedTime = Date.now() - __classPrivateFieldGet(this, _Clouds_startTime, "f");
+	    const cameraPosY = lerp(this.cameraHeightFrom, this.cameraHeightTo, __classPrivateFieldGet(this, _Clouds_scrollPercent, "f"));
+	    const cameraPosZ = (elapsedTime * this.cameraVelocity) % this.cameraTravelDistance;
+	    __classPrivateFieldGet(this, _Clouds_camera, "f").position.set(0, cameraPosY, -cameraPosZ + this.cameraTravelDistance * 2);
+	    __classPrivateFieldGet(this, _Clouds_renderer, "f").render(__classPrivateFieldGet(this, _Clouds_scene, "f"), __classPrivateFieldGet(this, _Clouds_camera, "f"));
+	    __classPrivateFieldGet(this, _Clouds_stats, "f").end();
+	    requestAnimationFrame(() => {
+	        __classPrivateFieldGet(this, _Clouds_instances, "m", _Clouds_animate).call(this);
+	    });
+	}, _Clouds_recalculateRects = function _Clouds_recalculateRects() {
+	    console.log("recalculting");
+	    const bodyRect = document.body.getBoundingClientRect();
+	    __classPrivateFieldSet(this, _Clouds_canvasRect, this.canvas.getBoundingClientRect(), "f");
+	    __classPrivateFieldSet(this, _Clouds_canvasTopPageY, __classPrivateFieldGet(this, _Clouds_canvasRect, "f").top - bodyRect.top, "f");
+	    __classPrivateFieldSet(this, _Clouds_canvasBottomPageY, __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f") + __classPrivateFieldGet(this, _Clouds_canvasRect, "f").height, "f");
+	}, _Clouds_onScroll = function _Clouds_onScroll() {
+	    const scrollYBottom = window.scrollY + window.innerHeight;
+	    if (scrollYBottom >= __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f") &&
+	        window.scrollY <= __classPrivateFieldGet(this, _Clouds_canvasBottomPageY, "f")) {
+	        const start = __classPrivateFieldGet(this, _Clouds_canvasTopPageY, "f");
+	        const end = __classPrivateFieldGet(this, _Clouds_canvasBottomPageY, "f") + __classPrivateFieldGet(this, _Clouds_canvasRect, "f").height;
+	        const current = scrollYBottom;
+	        __classPrivateFieldSet(this, _Clouds_scrollPercent, (current - start) / (end - start), "f");
+	    }
+	};
 
 	// GUI
 	const gui = new GUI();
 	gui.close();
 	// CAROUSEL
-	const carousel = new Carousel({
-	    buttonsEl: document.querySelector(".carousel-buttons"),
-	    stageEl: document.querySelector(".carousel-stage"),
-	    data: [
-	        {
-	            srcWebm: "Dragons/dragon_176633.webm",
-	            buttonLabel: 'Dragon 1',
-	            buttonImage: 'thumbnail.png',
-	        },
-	        {
-	            srcWebm: "Dragons/dragon_176633.webm",
-	            buttonLabel: 'Dragon 2',
-	            buttonImage: 'thumbnail.png',
-	        },
-	        {
-	            srcWebm: "Dragons/dragon_176633.webm",
-	            buttonLabel: 'Dragon 2',
-	            buttonImage: 'thumbnail.png',
-	        },
-	    ],
-	});
-	const carouselFolder = gui.addFolder("Carousel");
-	carouselFolder.add(carousel, "animDurationSec").listen();
+	// const carousel = new Carousel({
+	//   buttonsEl: document.querySelector(".carousel-buttons"),
+	//   stageEl: document.querySelector(".carousel-stage"),
+	//   data: [
+	//     {
+	//       srcWebm: "Dragons/dragon_176633.webm",
+	//       buttonLabel: 'Dragon 1',
+	//       buttonImage: 'thumbnail.png',
+	//     },
+	//     {
+	//       srcWebm: "Dragons/dragon_176633.webm",
+	//       buttonLabel: 'Dragon 2',
+	//       buttonImage: 'thumbnail.png',
+	//     },
+	//     {
+	//       srcWebm: "Dragons/dragon_176633.webm",
+	//       buttonLabel: 'Dragon 2',
+	//       buttonImage: 'thumbnail.png',
+	//     },
+	//   ],
+	// });
+	// const carouselFolder = gui.addFolder("Carousel");
+	// carouselFolder.add(carousel, "animDurationSec").listen();
 	// CLOUDS
 	const clouds = new Clouds({ canvas: document.querySelector("#c") });
 	clouds.init();
@@ -45483,6 +45223,8 @@
 	cloudsGUIFolder.add(clouds, "cloudCount", 1, 8000);
 	cloudsGUIFolder.add(clouds, "horizontalSpreadFactor");
 	cloudsGUIFolder.add(clouds, "verticalSpreadFactor");
+	cloudsGUIFolder.add(clouds, "scaleMin");
+	cloudsGUIFolder.add(clouds, "scaleMax");
 	const fogFolder = gui.addFolder("Fog");
 	const fogGUIHelper = new FogGUIHelper(clouds.scene.fog, clouds.scene.background);
 	const near = clouds.scene.fog.near;

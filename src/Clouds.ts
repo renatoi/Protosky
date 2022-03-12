@@ -3,6 +3,7 @@ import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUt
 import { getRandomArbitrary, resizeRendererToDisplaySize } from "./three-utils";
 import Stats from "stats.js";
 import { lerp } from "three/src/math/MathUtils";
+import { ShaderChunk } from "three"
 
 interface CloudsOptions {
   canvas: HTMLCanvasElement;
@@ -118,7 +119,7 @@ export class Clouds implements CloudsOptions {
 
     // texture
     const loader = new THREE.TextureLoader();
-    const texture = loader.load("cloud10.png");
+    const texture = loader.load("rc-cloud_option3.png");
     texture.magFilter = THREE.LinearFilter;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
 
@@ -130,6 +131,16 @@ export class Clouds implements CloudsOptions {
       depthTest: false,
       depthWrite: false,
     });
+    this.#material.onBeforeCompile = (shader) => {
+      console.log(shader.fragmentShader);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        [
+          '#include <dithering_fragment>',
+          'gl_FragColor.a *= pow( gl_FragCoord.z, 50.0 );'
+        ].join('\n')
+      );
+    };
 
     // geometry
     this.#planeGeometry = new THREE.PlaneGeometry(64, 64);
@@ -236,5 +247,60 @@ export class Clouds implements CloudsOptions {
         const current = scrollYBottom;
         this.#scrollPercent = (current - start) / (end - start);
     }
+  }
+
+  vertexShader() {
+    return `
+      varying vec2 vUv;
+      varying float vFogDepth;
+      void main() {
+        vUv = uv;
+        vec4 mvPosition = vec4( transformed, 1.0 );
+        #ifdef USE_INSTANCING
+          mvPosition = instanceMatrix * mvPosition;
+        #endif
+        mvPosition = modelViewMatrix * mvPosition;
+        gl_Position = projectionMatrix * mvPosition;
+        vFogDepth = - mvPosition.z;
+      }
+    `;
+  }
+
+  fragmentShader() {
+    return `
+      uniform vec3 diffuse;
+      uniform float opacity;
+      uniform sampler2D map;
+      uniform float alphaTest;
+      varying vec2 vUv;
+      uniform vec3 fogColor;
+      varying float vFogDepth;
+      #ifdef FOG_EXP2
+        uniform float fogDensity;
+      #else
+        uniform float fogNear;
+        uniform float fogFar;
+      #endif
+
+      void main() {
+        vec4 diffuseColor = vec4( diffuse, opacity );
+        vec4 sampledDiffuseColor = texture2D( map, vUv );
+        diffuseColor *= sampledDiffuseColor;
+
+        if (diffuseColor.a < alphaTest) discard;
+        
+        gl_FragColor = diffuseColor;
+        gl_FragColor.a *= pow( gl_FragCoord.z, 50.0 );
+
+        #ifdef USE_FOG
+          #ifdef FOG_EXP2
+            float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+          #else
+            float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+          #endif
+          gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+        #endif
+      }
+    `;
   }
 }
